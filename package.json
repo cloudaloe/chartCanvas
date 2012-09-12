@@ -1,5 +1,5 @@
 {
-	"name": "chart",
+	"name": "chartCanvas",
 	"version": "0.0.1",
 	"dependencies": {
 		"node-static": "0.6.0"
