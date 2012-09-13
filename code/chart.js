@@ -31,44 +31,35 @@ function initChart()
 
     var layer = new Kinetic.Layer();
 
-     var rect = new Kinetic.Rect({
+     var chartRect = new Kinetic.Rect({
 	  x: 0,
 	  y: 0,
 	  width: chartBox.width,
 	  height: chartBox.height,
-	  fill: "#00D2FF",
+	  fill: "hsl(240, 20%, 95%)",
 	  stroke: "black",
-	  strokeWidth: 0.1
+	  strokeWidth: 0.01
   	});
-	
-	rect.on("mousemove", function() {
-         rect.setStrokeWidth(rect.getStrokeWidth()+0.5);
+
+    chartRect.on("mouseover", function() {
+        chartRect.setFill("hsl(240,15%,93%)");
 		 layer.draw();
         });
 
-	rect.on("touchstart, touchmove", function() {
-         rect.setStrokeWidth(rect.getStrokeWidth()+0.5);
-		 layer.draw();
-        });
+    chartRect.on("mouseout", function() {
+        chartRect.setFill("hsl(240,20%,95%)");
+        layer.draw();
+    });
 
-		
-	
-	// add the shape to the layer
-	layer.add(rect);
+    // add the shape to the layer
+	layer.add(chartRect);
 
 	// add the layer to the stage
 	stage.add(layer);
-	
-	// var svgArea = chartArea.append("svg:svg");
-	// svgArea.attr("width", widthPixels).attr("height", heightPixels);
-	
-	// chart.svgElem = svgArea.append("svg:g");
-	// chart.svgElem.attr("width", widthPixels).attr("height", heightPixels);	
-
-	// draw(parseFloat(heightPixels) - xAxisHeight, parseFloat(widthPixels) - yAxisWidth);
+     draw(layer, chartBox.height, chartBox.width);
 }
 
-function initTimeframe()
+	function initTimeframe()
 {
 	timeframe.min = Math.min(series.series[0].minDate, series.series[1].minDate);
 	timeframe.max = Math.max(series.series[0].maxDate, series.series[1].maxDate);
@@ -76,11 +67,11 @@ function initTimeframe()
 	console.dir(timeframe);
 }
 
-function draw(height, width)
+function draw(layer, height, width)
 {
 	//
-	// construct scales that the plot function will use 
-	// for projecting data values to chart space pixels.
+	//  construct scales that would be used for
+	//  projecting data values to chart space pixels.
 	//
 	// the arguments are the target pixel range, as computed by the caller.
 	// 
@@ -97,14 +88,37 @@ function draw(height, width)
     .x(function(i) { return widthScaler(i.x); })
     .y(function(i) { return heightScaler(i.y); });
 
+    var position = {x:0, y:0};
+
+    function line(x, y, toX, toY)
+    {
+           var line = new Kinetic.Line({
+            points: [ widthScaler(x), heightScaler(y),  widthScaler(toX), heightScaler(toY)],
+            stroke: "orange",
+            strokeWidth: 3,
+            lineCap: "round",
+            lineJoin: "round"
+        });
+        console.log(x, y, toX, toY);
+        layer.add(line);
+    }
+
+    function plot(data)
+    {
+        data.forEach(function (i)
+        {
+            debugger;
+            line(position.x,  position.y , i.x, i.y);
+            position = {x: i.x,  y:i.y};
+        });
+    }
+
 	//
 	// plot each serie
 	//
-	seriesPlot1 = chart.svgElem.append("path");
-	seriesPlot1.attr("d", plotCalc(series.series[0].data));
+	 plot(series.series[0].data);
 
-	seriesPlot2 = chart.svgElem.append("path");
-	seriesPlot2.attr("d", plotCalc(series.series[1].data));
+	 //plot(series.series[1].data);
 
     function drawAxes()
     {
@@ -122,5 +136,5 @@ function draw(height, width)
 
     }
 
-    drawAxes();
+    //drawAxes();
 }
