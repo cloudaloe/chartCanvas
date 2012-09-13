@@ -83,22 +83,18 @@ function draw(layer, height, width)
 	heightScaler.range([height, 0]);
 	heightScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
 	
-	var plotCalc = d3.svg.line()
-    .interpolate("monotone")
-    .x(function(i) { return widthScaler(i.x); })
-    .y(function(i) { return heightScaler(i.y); });
-
-    var position = {x:0, y:0};
+	 var position = {x:0, y:0};
 
     function line(x, y, toX, toY)
     {
            var line = new Kinetic.Line({
             points: [ widthScaler(x), heightScaler(y),  widthScaler(toX), heightScaler(toY)],
             stroke: "orange",
-            strokeWidth: 3,
+            strokeWidth: 2,
             lineCap: "round",
             lineJoin: "round"
         });
+        debugger;
         console.log(x, y, toX, toY);
         layer.add(line);
     }
@@ -107,7 +103,6 @@ function draw(layer, height, width)
     {
         data.forEach(function (i)
         {
-            debugger;
             line(position.x,  position.y , i.x, i.y);
             position = {x: i.x,  y:i.y};
         });
