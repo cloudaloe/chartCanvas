@@ -42,7 +42,8 @@ function initChart()
   	});
 
     chartRect.on("mouseover", function() {
-        chartRect.setFill("hsl(240,15%,93%)");
+        //chartRect.setFill("hsl(240,15%,93%)");
+        chartRect.setFill("black");
 		 layer.draw();
         });
 
@@ -83,9 +84,7 @@ function draw(layer, height, width)
 	heightScaler.range([height, 0]);
 	heightScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
 	
-	 var position = {x:0, y:0};
-
-    function line(x, y, toX, toY)
+	 function line(x, y, toX, toY)
     {
            var line = new Kinetic.Line({
             points: [ widthScaler(x), heightScaler(y),  widthScaler(toX), heightScaler(toY)],
@@ -94,18 +93,18 @@ function draw(layer, height, width)
             lineCap: "round",
             lineJoin: "round"
         });
-        debugger;
+        //debugger;
         console.log(x, y, toX, toY);
         layer.add(line);
     }
 
     function plot(data)
     {
-        data.forEach(function (i)
+
+        for (i=0; i<data.length-1; i++)
         {
-            line(position.x,  position.y , i.x, i.y);
-            position = {x: i.x,  y:i.y};
-        });
+            line(data[i].x, data[i].y, data[i+1].x, data[i+1].y)
+        }
     }
 
 	//
