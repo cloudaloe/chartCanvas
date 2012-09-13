@@ -15,36 +15,27 @@ function seriesReady()
 
 function initChart()
 {
-	//
-	// create an svg 'g' element for hosting the actual stuff,
-	// then invoke the next function for actuall drawing
-	//
-
-	//var chartArea = d3.select("#chartContainer");	
-	//heightPixels = chartArea.style('height')
-	//widthPixels = chartArea.style('width');
-
 	var chartArea = document.getElementById('chartContainer');
 	var width = parseFloat(getComputedStyle(chartArea).width);
 	var height = parseFloat(getComputedStyle(chartArea).height);
-	
-	//var chartAreaj = $('#chartArea');
-	//var height=$('#chartArea').height();
-	//var width=$('#chartArea').width();	
-	//debugger;
-	var stage = new Kinetic.Stage({
-        container: "chartContainer",
-          width: width,
-          height: height
-        });
-	
-	 var layer = new Kinetic.Layer();
+
+    chartBoxFactor = 7/8;
+     var chartBox = {
+            width: width * chartBoxFactor,
+            height: height * chartBoxFactor,
+            x: width * (1-chartBoxFactor),
+            y: height * (1-chartBoxFactor)
+            };
+
+	var stage = new Kinetic.Stage($.extend( {container: "chartContainer"}, chartBox));
+
+    var layer = new Kinetic.Layer();
 
      var rect = new Kinetic.Rect({
-	  x: width/4,
-	  y: height/4,
-	  width: width/2,
-	  height: height/2,
+	  x: 0,
+	  y: 0,
+	  width: chartBox.width,
+	  height: chartBox.height,
 	  fill: "#00D2FF",
 	  stroke: "black",
 	  strokeWidth: 0.1
@@ -109,7 +100,7 @@ function draw(height, width)
 	//
 	// plot each serie
 	//
-	seriesPlot1 = chart.svgElem.append("path")
+	seriesPlot1 = chart.svgElem.append("path");
 	seriesPlot1.attr("d", plotCalc(series.series[0].data));
 
 	seriesPlot2 = chart.svgElem.append("path");
