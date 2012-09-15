@@ -19,27 +19,29 @@ function initChart()
 	var width = parseFloat(getComputedStyle(chartArea).width);
 	var height = parseFloat(getComputedStyle(chartArea).height);
 
-    chartBoxFactor = 7/8;
+    chartBoxFactor =5/5;
      var chartBox = {
             width: width * chartBoxFactor,
             height: height * chartBoxFactor,
-            x: width * (1-chartBoxFactor),
-            y: height * (1-chartBoxFactor)
-            };
+            x: width * (1-(chartBoxFactor)),
+            y: height * (1-(chartBoxFactor))
+     };
 
-	var stage = new Kinetic.Stage($.extend( {container: "chartContainer"}, chartBox));
+	//var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
+	var stage = new Kinetic.Stage({container: chartArea});
+
+     console.log(height,width);
+     console.log(chartBox) ;
+    console.log($.extend({container: chartArea}, chartBox));
+    console.log(stage.getHeight(), stage.getWidth(), stage.getSize());
 
     var layer = new Kinetic.Layer();
 
-     var chartRect = new Kinetic.Rect({
-	  x: 0,
-	  y: 0,
-	  width: chartBox.width,
-	  height: chartBox.height,
+     var chartRect = new Kinetic.Rect($.extend(chartBox,{
 	  fill: "hsl(240, 20%, 95%)",
 	  stroke: "black",
 	  strokeWidth: 0.01
-  	});
+  	}));
 
     chartRect.on("mouseover", function() {
         //chartRect.setFill("hsl(240,15%,93%)");
@@ -57,7 +59,7 @@ function initChart()
 
 	// add the layer to the stage
 	stage.add(layer);
-     draw(layer, chartBox.height, chartBox.width);
+     draw(layer, chartBox.height, chartBox.width, chartBox.x, chartBox.y);
 }
 
 	function initTimeframe()
@@ -68,8 +70,9 @@ function initChart()
 	console.dir(timeframe);
 }
 
-function draw(layer, height, width)
+function draw(layer, height, width, x, y)
 {
+    //console.log(height, width);
 	//
 	//  construct scales that would be used for
 	//  projecting data values to chart space pixels.
@@ -86,21 +89,21 @@ function draw(layer, height, width)
 	
 	 function line(x, y, toX, toY)
     {
+           console.log(heightScaler(toY));
            var line = new Kinetic.Line({
             points: [ widthScaler(x), heightScaler(y),  widthScaler(toX), heightScaler(toY)],
             stroke: "orange",
-            strokeWidth: 2,
-            lineCap: "round",
-            lineJoin: "round"
+            strokeWidth: 1,
+            lineCap: "mitter",
+            lineJoin: "mitter"
         });
-        //debugger;
-        console.log(x, y, toX, toY);
+        //console.log(x, y, toX, toY);
         layer.add(line);
     }
 
     function plot(data)
     {
-
+        debugger;
         for (i=0; i<data.length-1; i++)
         {
             line(data[i].x, data[i].y, data[i+1].x, data[i+1].y)
@@ -110,9 +113,12 @@ function draw(layer, height, width)
 	//
 	// plot each serie
 	//
-	 plot(series.series[0].data);
 
-	 //plot(series.series[1].data);
+    plot(series.series[0].data);
+
+	 plot(series.series[1].data);
+
+    layer.draw();
 
     function drawAxes()
     {
