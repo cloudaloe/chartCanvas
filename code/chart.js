@@ -19,47 +19,46 @@ function initChart()
 	var width = parseFloat(getComputedStyle(chartArea).width);
 	var height = parseFloat(getComputedStyle(chartArea).height);
 
-    chartBoxFactor =5/5;
+    chartBoxFactor =4/5;
      var chartBox = {
             width: width * chartBoxFactor,
             height: height * chartBoxFactor,
-            x: width * (1-(chartBoxFactor)),
-            y: height * (1-(chartBoxFactor))
+            x: width * (1-(chartBoxFactor))/2,
+            y: height * (1-(chartBoxFactor))/2
      };
 
 	//var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
 	var stage = new Kinetic.Stage($.extend({container: chartArea},{height: height, width: width}));
 
-     console.log(height,width);
-     console.log(chartBox) ;
-    console.log($.extend({container: chartArea}, chartBox));
-    console.log(stage.getHeight(), stage.getWidth(), stage.getSize());
+     //console.log(height,width);
+     //console.log(chartBox) ;
+     //console.log(stage.getHeight(), stage.getWidth(), stage.getSize());
 
     var layer = new Kinetic.Layer();
 
-     var chartRect = new Kinetic.Rect($.extend(chartBox,{
+     var chartBoxRect = new Kinetic.Rect($.extend(chartBox,{
 	  fill: "hsl(240, 20%, 95%)",
 	  stroke: "black",
 	  strokeWidth: 0.01
   	}));
 
-    chartRect.on("mouseover", function() {
+    chartBoxRect.on("mouseover", function() {
         //chartRect.setFill("hsl(240,15%,93%)");
-        chartRect.setFill("black");
+        this.setFill("black");
 		 layer.draw();
         });
 
-    chartRect.on("mouseout", function() {
-        chartRect.setFill("hsl(240,20%,95%)");
+    chartBoxRect.on("mouseout", function() {
+        this.setFill("hsl(240,20%,95%)");
         layer.draw();
     });
 
     // add the shape to the layer
-	layer.add(chartRect);
+	layer.add(chartBoxRect);
 
 	// add the layer to the stage
 	stage.add(layer);
-     draw(layer, chartBox.height, chartBox.width, chartBox.x, chartBox.y);
+     draw(layer, chartBox);
 }
 
 	function initTimeframe()
@@ -70,7 +69,7 @@ function initChart()
 	console.dir(timeframe);
 }
 
-function draw(layer, height, width, x, y)
+function draw(layer, drawBox)
 {
     //console.log(height, width);
 	//
@@ -78,13 +77,19 @@ function draw(layer, height, width, x, y)
 	//  projecting data values to chart space pixels.
 	//
 	// the arguments are the target pixel range, as computed by the caller.
-	// 
+	//
+
+     drawBox.startX=drawBox.x;
+     drawBox.endX=drawBox.x+drawBox.width;
+     drawBox.startY=drawBox.y;
+    drawBox. endY=drawBox.y+drawBox.height;
+
 	var widthScaler = d3.time.scale();
-	widthScaler.range([0, width]);
+	widthScaler.range([drawBox.startX, drawBox.endX]);
 	widthScaler.domain([timeframe.min, timeframe.max]);
 	
 	var heightScaler = d3.scale.linear();
-	heightScaler.range([height, 0]);
+	heightScaler.range([drawBox.endY, drawBox.startY]);
 	heightScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
 	
 	 function line(x, y, toX, toY)
