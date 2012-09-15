@@ -28,7 +28,7 @@ function initChart()
      };
 
 	//var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
-	var stage = new Kinetic.Stage({container: chartArea});
+	var stage = new Kinetic.Stage($.extend({container: chartArea},{height: height, width: width}));
 
      console.log(height,width);
      console.log(chartBox) ;
