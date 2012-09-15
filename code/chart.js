@@ -24,19 +24,46 @@ function initChart()
             width: width * chartBoxFactor,
             height: height * chartBoxFactor,
             x: width * (1-(chartBoxFactor))/2,
-            y: height * (1-(chartBoxFactor))/2
+            y: height * (1-(chartBoxFactor))/2,
      };
 
-	//var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
-	var stage = new Kinetic.Stage($.extend({container: chartArea},{height: height, width: width}));
+    var chartBoxRect = new Kinetic.Rect($.extend(chartBox,{
+        fill: "hsl(240, 20%, 95%)",
+        stroke: "black",
+        strokeWidth: 0.01
+    }));
 
+    //
+    // just explicitly  calculate  dimensions
+    // that could otherwise be spontaneously used inline
+    //
+    chartBox.startX = chartBox.x;
+    chartBox.startY= chartBox.y;
+    chartBox.endX = chartBox.startX+chartBox.width;
+    chartBox.endY = chartBox.startY+chartBox.height;
+
+    //
+    //  construct scales that would be used for
+    //  projecting data values to chart space pixels.
+    //
+    //  the arguments are the target pixel range
+    //
+    chartBox.widthScaler = d3.time.scale();
+    chartBox.widthScaler.range([chartBox.startX, chartBox.endX]);
+    chartBox.widthScaler.domain([timeframe.min, timeframe.max]);
+
+    chartBox.heightScaler = d3.scale.linear();
+    chartBox.widthScaler.range([chartBox.endY, chartBox.startY]);
+    chartBox.widthScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
+
+    //var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
+	var stage = new Kinetic.Stage($.extend({container: chartArea},{height: height, width: width}));
     var layer = new Kinetic.Layer();
 
-     var chartBoxRect = new Kinetic.Rect($.extend(chartBox,{
-	  fill: "hsl(240, 20%, 95%)",
-	  stroke: "black",
-	  strokeWidth: 0.01
-  	}));
+    chartBoxRect.on('mousemove', function() {
+        var pos = stage.getMousePosition();
+        console.log('x: ' + pos.x + ', y: ' + pos.y);
+    });
 
     chartBoxRect.on("mouseover", function() {
         //chartRect.setFill("hsl(240,15%,93%)");
@@ -68,30 +95,11 @@ function initChart()
 function draw(layer, drawBox)
 {
 
-	//
-	//  construct scales that would be used for
-	//  projecting data values to chart space pixels.
-	//
-	//  the arguments are the target pixel range
-	//
-
-     drawBox.startX=drawBox.x;
-     drawBox.endX=drawBox.x+drawBox.width;
-     drawBox.startY=drawBox.y;
-    drawBox. endY=drawBox.y+drawBox.height;
-
-	var widthScaler = d3.time.scale();
-	widthScaler.range([drawBox.startX, drawBox.endX]);
-	widthScaler.domain([timeframe.min, timeframe.max]);
-	
-	var heightScaler = d3.scale.linear();
-	heightScaler.range([drawBox.endY, drawBox.startY]);
-	heightScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
-	
-	 function line(x, y, toX, toY)
+    function line(drawBox, x, y, toX, toY)
     {
+            debugger;
             var line = new Kinetic.Line({
-            points: [ widthScaler(x), heightScaler(y),  widthScaler(toX), heightScaler(toY)],
+            points: [ drawBox.widthScaler(x), drawBox.heightScaler(y),  drawBox.widthScaler(toX), drawBox.heightScaler(toY)],
             stroke: "orange",
             strokeWidth: 1,
             lineCap: "mitter",
@@ -100,12 +108,11 @@ function draw(layer, drawBox)
         layer.add(line);
     }
 
-    function plot(data)
+    function plot(drawBox, data)
     {
-        debugger;
         for (i=0; i<data.length-1; i++)
         {
-            line(data[i].x, data[i].y, data[i+1].x, data[i+1].y)
+            line(drawBox, data[i].x, data[i].y, data[i+1].x, data[i+1].y)
         }
     }
 
@@ -113,9 +120,9 @@ function draw(layer, drawBox)
 	// plot each serie
 	//
 
-    plot(series.series[0].data);
+    plot(drawBox, series.series[0].data);
 
-	 plot(series.series[1].data);
+	 plot(drawBox, series.series[1].data);
 
     layer.draw();
 
