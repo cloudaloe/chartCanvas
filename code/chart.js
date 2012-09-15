@@ -53,8 +53,8 @@ function initChart()
     chartBox.widthScaler.domain([timeframe.min, timeframe.max]);
 
     chartBox.heightScaler = d3.scale.linear();
-    chartBox.widthScaler.range([chartBox.endY, chartBox.startY]);
-    chartBox.widthScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
+    chartBox.heightScaler.range([chartBox.endY, chartBox.startY]);
+    chartBox.heightScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
 
     //var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
 	var stage = new Kinetic.Stage($.extend({container: chartArea},{height: height, width: width}));
@@ -97,7 +97,6 @@ function draw(layer, drawBox)
 
     function line(drawBox, x, y, toX, toY)
     {
-            debugger;
             var line = new Kinetic.Line({
             points: [ drawBox.widthScaler(x), drawBox.heightScaler(y),  drawBox.widthScaler(toX), drawBox.heightScaler(toY)],
             stroke: "orange",
