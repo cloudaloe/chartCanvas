@@ -30,10 +30,6 @@ function initChart()
 	//var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
 	var stage = new Kinetic.Stage($.extend({container: chartArea},{height: height, width: width}));
 
-     //console.log(height,width);
-     //console.log(chartBox) ;
-     //console.log(stage.getHeight(), stage.getWidth(), stage.getSize());
-
     var layer = new Kinetic.Layer();
 
      var chartBoxRect = new Kinetic.Rect($.extend(chartBox,{
@@ -65,18 +61,18 @@ function initChart()
 {
 	timeframe.min = Math.min(series.series[0].minDate, series.series[1].minDate);
 	timeframe.max = Math.max(series.series[0].maxDate, series.series[1].maxDate);
-	console.log("timeframe:");
-	console.dir(timeframe);
+	//console.log("timeframe:");
+	//console.dir(timeframe);
 }
 
 function draw(layer, drawBox)
 {
-    //console.log(height, width);
+
 	//
 	//  construct scales that would be used for
 	//  projecting data values to chart space pixels.
 	//
-	// the arguments are the target pixel range, as computed by the caller.
+	//  the arguments are the target pixel range
 	//
 
      drawBox.startX=drawBox.x;
@@ -94,15 +90,13 @@ function draw(layer, drawBox)
 	
 	 function line(x, y, toX, toY)
     {
-           console.log(heightScaler(toY));
-           var line = new Kinetic.Line({
+            var line = new Kinetic.Line({
             points: [ widthScaler(x), heightScaler(y),  widthScaler(toX), heightScaler(toY)],
             stroke: "orange",
             strokeWidth: 1,
             lineCap: "mitter",
             lineJoin: "mitter"
         });
-        //console.log(x, y, toX, toY);
         layer.add(line);
     }
 
