@@ -57,12 +57,12 @@ function initChart()
     chartBox.heightScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
 
     //var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
-	var stage = new Kinetic.Stage($.extend({container: chartArea},{height: height, width: width}));
+	var stage = new Kinetic.Stage({container: chartArea ,height: height, width: width});
     var layer = new Kinetic.Layer();
 
     chartBoxRect.on('mousemove', function() {
         var pos = stage.getMousePosition();
-        console.log('x: ' + pos.x + ', y: ' + pos.y);
+        console.log('x: ' + chartBox.widthScaler.invert(pos.x) + ', y: ' + chartBox.heightScaler.invert(pos.y));
     });
 
     chartBoxRect.on("mouseover", function() {
@@ -120,8 +120,7 @@ function draw(layer, drawBox)
 	//
 
     plot(drawBox, series.series[0].data);
-
-	 plot(drawBox, series.series[1].data);
+    plot(drawBox, series.series[1].data);
 
     layer.draw();
 
