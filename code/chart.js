@@ -59,12 +59,21 @@ function initChart()
     var stage = new Kinetic.Stage({container: chartArea ,height: height, width: width});
     var layer = new Kinetic.Layer();
 
+    var circle = new Kinetic.Circle({
+        radius: 3,
+        fill: "orange",
+        stroke: "orange",
+        strokeWidth: 0
+    });
+
     chartBoxRect.on('mousemove', function() {
         //
         // find datum closest to mouse position, out of all series.
         // note that lines between datums do not count here,
         // only datums.
         //
+
+        layer.add(circle);
         var pos = stage.getMousePosition();
         //console.log('x: ' + chartBox.widthScaler.invert(pos.x) + ', y: ' + chartBox.heightScaler.invert(pos.y));
 
@@ -87,7 +96,12 @@ function initChart()
                     }
             }
         }
-        console.log( minDistance, minDistanceElem, minDistanceSerie);
+        console.log( minDistance, minDistanceElem, minDistanceSerie, series.series[minDistanceSerie].data[minDistanceElem]);
+
+        circle.setX(series.series[minDistanceSerie].data[minDistanceElem].plotX);
+        circle.setY(series.series[minDistanceSerie].data[minDistanceElem].plotY);
+        layer.add(circle);
+       layer.draw();
     });
 
     chartBoxRect.on("mouseover", function() {
