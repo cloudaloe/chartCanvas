@@ -60,35 +60,35 @@ function initChart()
     var layer = new Kinetic.Layer();
 
     chartBoxRect.on('mousemove', function() {
+        //
+        // find datum closest to mouse position, out of all series.
+        // note that lines between datums do not count here,
+        // only datums.
+        //
         var pos = stage.getMousePosition();
         //console.log('x: ' + chartBox.widthScaler.invert(pos.x) + ', y: ' + chartBox.heightScaler.invert(pos.y));
 
-        var minDistance = Infinity;
+         function dist(x0, y0, x1, y1)  { return Math.sqrt(Math.pow(Math.abs(x0-x1),2) + Math.pow(Math.abs(y0-y1),2)); };
+
         var minDistanceSerie = null;
+        var minDistance = Infinity;
+        var minDistanceElem = null;
 
         for (serie=0; serie<series.numOf; serie++)
         {
-            var serieMinDistance = Infinity;
-            var minDistanceElem = null;
-            var min = Infinity;
-
             for (elem=0; elem<series.series[serie].data.length-1; elem++)
             {
-                min = Math.min(Math.abs(series.series[serie].data[elem].plotX -  pos.x), min);
-                if (series.series[serie].data[elem].plotX ==  pos.x)
-                {
-                    var distance = Math.abs(series.series[serie].data[elem].plotY -  pos.y);
+                    var distance = dist(series.series[serie].data[elem].plotX,  series.series[serie].data[elem].plotY,  pos.x, pos.y);
                     if (distance < minDistance)
                     {
                         minDistance =  distance;
+                        minDistanceElem = elem;
                         minDistanceSerie = serie;
                     }
-                }
             }
-            console.log(min);
         }
-        //console.log( minDistance, minDistanceSerie);
-        });
+        console.log( minDistance, minDistanceElem, minDistanceSerie);
+    });
 
     chartBoxRect.on("mouseover", function() {
         //chartRect.setFill("hsl(240,15%,93%)");
