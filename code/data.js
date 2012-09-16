@@ -5,6 +5,7 @@
 
 series = new Object();
 series.series = new Array();
+series.numOf = 0;
 
 function csvLoad(fileRelPath) {
 	// this function is no good for real-world interactions, as the callback can't
@@ -26,14 +27,18 @@ function csvLoad(fileRelPath) {
 			alert("failed loading data file" + fileRelPath);
 	}); }
 
-function csvLoaded() { 
-	
-	function extractSerieFromCube(cube, x, y) 
+function csvLoaded() {
+
+    //
+    // Extract single series from given cube.
+    // @ slice out one series
+    // @ into an array of x and y values
+    // @ compute min and max of date and values
+    //
+    // Need to add error cases handling
+    //
+    function extractSerieFromCube(cube, x, y)
 	{
-		// Extract single series from given cube.
-		// @ slice out one series
-		// @ into an array of x and y values
-		// @ compute min and max of date and values
 		if (!cube.length)
 			console.log('empty series passed as argument');
 		else
@@ -61,6 +66,7 @@ function csvLoaded() {
 				serie.max = Math.max(serie.max, serie.data[i].y);				
 			}
 		}
+        series.numOf += 1;
 		console.log('extracted serie from cube' + ':');
 		console.dir(serie);	
 		return serie;

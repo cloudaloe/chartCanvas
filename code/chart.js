@@ -56,14 +56,39 @@ function initChart()
     chartBox.heightScaler.range([chartBox.endY, chartBox.startY]);
     chartBox.heightScaler.domain([0, Math.max(series.series[0].max, series.series[1].max)]);
 
-    //var stage = new Kinetic.Stage($.extend({container: chartArea}, chartBox));
-	var stage = new Kinetic.Stage({container: chartArea ,height: height, width: width});
+    var stage = new Kinetic.Stage({container: chartArea ,height: height, width: width});
     var layer = new Kinetic.Layer();
 
     chartBoxRect.on('mousemove', function() {
         var pos = stage.getMousePosition();
-        console.log('x: ' + chartBox.widthScaler.invert(pos.x) + ', y: ' + chartBox.heightScaler.invert(pos.y));
-    });
+        //console.log('x: ' + chartBox.widthScaler.invert(pos.x) + ', y: ' + chartBox.heightScaler.invert(pos.y));
+
+        var minDistance = Infinity;
+        var minDistanceSerie = null;
+
+        for (serie=0; serie<series.numOf; serie++)
+        {
+            var serieMinDistance = Infinity;
+            var minDistanceElem = null;
+            var min = Infinity;
+
+            for (elem=0; elem<series.series[serie].data.length-1; elem++)
+            {
+                min = Math.min(Math.abs(series.series[serie].data[elem].plotX -  pos.x), min);
+                if (series.series[serie].data[elem].plotX ==  pos.x)
+                {
+                    var distance = Math.abs(series.series[serie].data[elem].plotY -  pos.y);
+                    if (distance < minDistance)
+                    {
+                        minDistance =  distance;
+                        minDistanceSerie = serie;
+                    }
+                }
+            }
+            console.log(min);
+        }
+        //console.log( minDistance, minDistanceSerie);
+        });
 
     chartBoxRect.on("mouseover", function() {
         //chartRect.setFill("hsl(240,15%,93%)");
@@ -95,10 +120,10 @@ function initChart()
 function draw(layer, drawBox)
 {
 
-    function line(drawBox, x, y, toX, toY)
+    function line(drawBox, x , y, toX, toY)
     {
             var line = new Kinetic.Line({
-            points: [ drawBox.widthScaler(x), drawBox.heightScaler(y),  drawBox.widthScaler(toX), drawBox.heightScaler(toY)],
+            points: [ x, y, toX, toY],
             stroke: "orange",
             strokeWidth: 1,
             lineCap: "mitter",
@@ -107,20 +132,26 @@ function draw(layer, drawBox)
         layer.add(line);
     }
 
-    function plot(drawBox, data)
+    //
+    //  translate value pairs to screen coordinates, and invoke the drawing
+    //
+    function plotPlus(drawBox, data)
     {
         for (i=0; i<data.length-1; i++)
         {
-            line(drawBox, data[i].x, data[i].y, data[i+1].x, data[i+1].y)
+            data[i].plotX = drawBox.widthScaler(data[i].x);
+            data[i].plotY = drawBox.heightScaler(data[i].y);
+            data[i+1].plotX = drawBox.widthScaler(data[i+1].x);
+            data[i+1].plotY = drawBox.heightScaler(data[i+1].y);
+            line(drawBox, data[i].plotX, data[i].plotY, data[i+1].plotX, data[i+1].plotY);
         }
     }
 
 	//
-	// plot each serie
+	//  plot each serie, and prepare it for event capture
 	//
-
-    plot(drawBox, series.series[0].data);
-    plot(drawBox, series.series[1].data);
+    plotPlus(drawBox, series.series[0].data);
+    plotPlus(drawBox, series.series[1].data);
 
     layer.draw();
 
