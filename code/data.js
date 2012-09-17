@@ -31,8 +31,7 @@ function csvLoaded() {
 
     //
     // Extract single series from given cube.
-    // @ slice out one series
-    // @ into an array of x and y values
+    // @ slice out one series, into an array of x and y values
     // @ compute min and max of date and values
     //
     // Need to add error cases handling
@@ -67,6 +66,8 @@ function csvLoaded() {
 			}
 		}
         series.numOf += 1;
+        serie.name = y;
+
 		console.log('extracted serie [' + y + '] from cube' + ':');
 		console.dir(serie);	
 		return serie;

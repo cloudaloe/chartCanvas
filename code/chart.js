@@ -15,7 +15,6 @@ function seriesReady()
 
 function initChart()
 {
-
     //
     //  translate value pairs to screen coordinates
     //
