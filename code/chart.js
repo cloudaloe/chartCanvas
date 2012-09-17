@@ -13,8 +13,80 @@ function seriesReady()
 	initChart();
 }
 
+
+
 function initChart()
 {
+
+//
+//  translate value pairs to screen coordinates, and invoke the drawing
+//
+    function calcPlot(layer, drawBox, data, style)
+    {
+        for (i=0; i<data.length-1; i++)
+        {
+            data[i].plotX = chartBox.widthScaler(data[i].x);
+            data[i].plotY = chartBox.heightScaler(data[i].y);
+            data[i+1].plotX = chartBox.widthScaler(data[i+1].x);
+            data[i+1].plotY = chartBox.heightScaler(data[i+1].y);
+        }
+    }
+
+    function plot(layer, drawBox, data, style)
+    {
+        var thickness = style == 'highlighted' ? 1.5 : 1;
+
+        for (i=0; i<data.length-1; i++)
+        {
+            line(layer, data[i].plotX, data[i].plotY, data[i+1].plotX, data[i+1].plotY, thickness);
+        }
+    }
+
+    function line(layer, x , y, toX, toY, thickness)
+    {
+        var line = new Kinetic.Line({
+            points: [ x, y, toX, toY],
+            stroke: "orange",
+            strokeWidth: thickness,
+            lineCap: "mitter",
+            lineJoin: "mitter"
+        });
+        layer.add(line);
+    }
+
+    function draw(layer)
+    {
+
+        //
+        //  plot each serie, and prepare it for event capture
+        //
+       for (serie=0; serie<series.numOf; serie++)
+       {
+           calcPlot(layer, chartBoxRect, series.series[serie].data);
+           plot(layer, chartBoxRect, series.series[serie].data);
+        }
+
+        layer.draw();
+
+        function drawAxes()
+        {
+            var xAxis = d3.svg.axis().scale(widthScaler).orient("bottom");
+            chart.svgElem.append("g")
+                .attr("class","Axis")
+                .attr("transform", "translate(0," + (height) + ")")
+                .call(xAxis);
+
+            var yAxis = d3.svg.axis().scale(heightScaler).orient("right");
+            chart.svgElem.append("g")
+                .attr("class","Axis")
+                .attr("transform", "translate(" + (width) + ",0)")
+                .call(yAxis);
+
+        }
+
+        //drawAxes();
+    }
+
 	var chartArea = document.getElementById('chartContainer');
 	var width = parseFloat(getComputedStyle(chartArea).width);
 	var height = parseFloat(getComputedStyle(chartArea).height);
@@ -60,9 +132,9 @@ function initChart()
     var layer = new Kinetic.Layer();
 
     var circle = new Kinetic.Circle({
-        radius: 3,
-        fill: "orange",
-        stroke: "orange",
+        radius: 2,
+        fill: "hsla(50, 50%, 50%, 1)",
+        stroke: "hsla(50, 50%, 50%, 1)",
         strokeWidth: 0
     });
 
@@ -72,8 +144,11 @@ function initChart()
         // note that lines between datums do not count here,
         // only datums.
         //
+        // for that datum, highlight it with a small bulky dot, and highlight its series
+        //  by making it appear thicker.
+        //
 
-        layer.add(circle);
+        layer.remove(circle);
         var pos = stage.getMousePosition();
         //console.log('x: ' + chartBox.widthScaler.invert(pos.x) + ', y: ' + chartBox.heightScaler.invert(pos.y));
 
@@ -96,14 +171,24 @@ function initChart()
                     }
             }
         }
-        console.log( minDistance, minDistanceElem, minDistanceSerie, series.series[minDistanceSerie].data[minDistanceElem]);
+        //console.log( minDistance, minDistanceElem, minDistanceSerie, series.series[minDistanceSerie].data[minDistanceElem]);
 
         circle.setX(series.series[minDistanceSerie].data[minDistanceElem].plotX);
         circle.setY(series.series[minDistanceSerie].data[minDistanceElem].plotY);
         layer.add(circle);
+
+        //plot(layer, chartBox, series.series[minDistanceSerie].data, 'highlighted');
+
+        var dataDetail = '';
+        dataDetail += '</p>' +  series.series[minDistanceSerie].data[minDistanceElem].x.toString() + '</p>';
+        dataDetail += series.series[minDistanceSerie].data[minDistanceElem].y.toString();
+
+        document.getElementById('dataDetail').innerHTML = dataDetail;
+
        layer.draw();
     });
 
+   /*
     chartBoxRect.on("mouseover", function() {
         //chartRect.setFill("hsl(240,15%,93%)");
         this.setFill("black");
@@ -114,6 +199,7 @@ function initChart()
         this.setFill("hsl(240,20%,95%)");
         layer.draw();
     });
+    */
 
     // add the shape to the layer
 	layer.add(chartBoxRect);
@@ -129,61 +215,4 @@ function initChart()
 	timeframe.max = Math.max(series.series[0].maxDate, series.series[1].maxDate);
 	//console.log("timeframe:");
 	//console.dir(timeframe);
-}
-
-function draw(layer, drawBox)
-{
-
-    function line(drawBox, x , y, toX, toY)
-    {
-            var line = new Kinetic.Line({
-            points: [ x, y, toX, toY],
-            stroke: "orange",
-            strokeWidth: 1,
-            lineCap: "mitter",
-            lineJoin: "mitter"
-        });
-        layer.add(line);
-    }
-
-    //
-    //  translate value pairs to screen coordinates, and invoke the drawing
-    //
-    function plotPlus(drawBox, data)
-    {
-        for (i=0; i<data.length-1; i++)
-        {
-            data[i].plotX = drawBox.widthScaler(data[i].x);
-            data[i].plotY = drawBox.heightScaler(data[i].y);
-            data[i+1].plotX = drawBox.widthScaler(data[i+1].x);
-            data[i+1].plotY = drawBox.heightScaler(data[i+1].y);
-            line(drawBox, data[i].plotX, data[i].plotY, data[i+1].plotX, data[i+1].plotY);
-        }
-    }
-
-	//
-	//  plot each serie, and prepare it for event capture
-	//
-    plotPlus(drawBox, series.series[0].data);
-    plotPlus(drawBox, series.series[1].data);
-
-    layer.draw();
-
-    function drawAxes()
-    {
-        var xAxis = d3.svg.axis().scale(widthScaler).orient("bottom");
-       chart.svgElem.append("g")
-            .attr("class","Axis")
-            .attr("transform", "translate(0," + (height) + ")")
-            .call(xAxis);
-
-        var yAxis = d3.svg.axis().scale(heightScaler).orient("right");
-        chart.svgElem.append("g")
-            .attr("class","Axis")
-            .attr("transform", "translate(" + (width) + ",0)")
-            .call(yAxis);
-
-    }
-
-    //drawAxes();
 }

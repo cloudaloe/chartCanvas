@@ -26,13 +26,15 @@
 		</form>
 		<div id='chartContainer'></div>
 			<!--svg id='chart'-->
-		</body>
+         <div id='dataDetail'></div>
+     </body>
+
 	<script>
 		function focusOnInput(){
 			document.getElementById('questionInput').focus();}
 		
 		function onLoad() { 
-			animateChartContainer(); 
+			//animateChartContainer();
 			csvLoad("mock-data/table1.csv");
 		}
 

@@ -15,7 +15,7 @@ function animateChartContainer() {
 // benign page load transitions
 var chartSpace = d3.select("#chartContainer");
 chartSpace.style("display", "inherit");
-chartSpace.transition().style("margin-top", "10%").duration(0).ease("cubic-in-out");	
+chartSpace.transition().style("margin-top", "10%").duration(1).ease("cubic-in-out");
 }
 
 function hideQuestionBar() {
