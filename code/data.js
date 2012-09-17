@@ -9,8 +9,8 @@ series.numOf = 0;
 
 function csvLoad(fileRelPath) {
 	// this function is no good for real-world interactions, as the callback can't
-	// be dynamically told where to put the loaded data(?!), and also because it can't
-	// use https only http. 
+	// be dynamically told where to put the loaded data(maybe a javascript closure would allow?!),
+	// and also because it can't use https only http.
 	d3.csv(fileRelPath, function(csvData) 
 	{
 		if (csvData) 
@@ -19,7 +19,7 @@ function csvLoad(fileRelPath) {
 			if (clientCodeDebug == 'high') {
 				console.dir(data); }
 			else;
-			console.log('data loaded from file ' + fileRelPath + ':'); 
+			console.log('data cube loaded from file ' + fileRelPath + ':');
 			console.dir(data);
 			csvLoaded();
 		}
@@ -67,19 +67,15 @@ function csvLoaded() {
 			}
 		}
         series.numOf += 1;
-		console.log('extracted serie from cube' + ':');
+		console.log('extracted serie [' + y + '] from cube' + ':');
 		console.dir(serie);	
 		return serie;
 	}
 	
 	series.series[0] = extractSerieFromCube(data, 'Time', 'Data Size');
     series.series[1] = extractSerieFromCube(data, 'Time', 'Index Size');
-	
-	if (series.series[0] && series.series[1]) {
-		console.log('data transformed' + ':');
-		console.dir(series.series[0]);
-		console.dir(series.series[1]);
-	}
-	
+
+    // for (elem=0; elem<series.series[serie].data.length-1; elem++) {}
+
 	seriesReady();
 }
