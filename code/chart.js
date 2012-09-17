@@ -4,8 +4,8 @@
 
 chart = new Object(); 		// container for chart properties
 timeframe = new Object();	// container for time frame properties
-xAxisHeight=20;
-yAxisWidth=40;
+//xAxisHeight=20;
+//yAxisWidth=40;
 
 function seriesReady()
 {
@@ -13,14 +13,12 @@ function seriesReady()
 	initChart();
 }
 
-
-
 function initChart()
 {
 
-//
-//  translate value pairs to screen coordinates, and invoke the drawing
-//
+    //
+    //  translate value pairs to screen coordinates
+    //
     function calcPlot(layer, drawBox, data, style)
     {
         for (i=0; i<data.length-1; i++)
@@ -32,6 +30,9 @@ function initChart()
         }
     }
 
+    //
+    // draw a serie
+    //
     function plot(layer, drawBox, data, style)
     {
         var thickness = style == 'highlighted' ? 1.5 : 1;
