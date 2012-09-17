@@ -19,12 +19,12 @@ function csvLoad(fileRelPath) {
 			if (clientCodeDebug == 'high') {
 				console.dir(data); }
 			else;
-			console.log('data cube loaded from file ' + fileRelPath + ':');
+			console.log('data cube loaded from file  ' + fileRelPath + ':');
 			console.dir(data);
 			csvLoaded();
 		}
 		else 
-			alert("failed loading data file" + fileRelPath);
+			alert("failed loading data file " + fileRelPath);
 	}); }
 
 function csvLoaded() {

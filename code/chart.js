@@ -160,7 +160,7 @@ function initChart()
 
         for (serie=0; serie<series.numOf; serie++)
         {
-            for (elem=0; elem<series.series[serie].data.length-1; elem++)
+            for (elem=0; elem<series.series[serie].data.length; elem++)
             {
                     var distance = dist(series.series[serie].data[elem].plotX,  series.series[serie].data[elem].plotY,  pos.x, pos.y);
                     if (distance < minDistance)
