@@ -179,11 +179,17 @@ function initChart()
 
         //plot(layer, chartBox, series.series[minDistanceSerie].data, 'highlighted');
 
-        var dataDetail = '';
-        dataDetail += '</p>' +  series.series[minDistanceSerie].data[minDistanceElem].x.toString() + '</p>';
-        dataDetail += series.series[minDistanceSerie].data[minDistanceElem].y.toString();
-
+        //
+        // show datum details in a bottom box.
+        // by adding it as html there
+        //
+        var dataDetail = '<div id=dataDetailInner>';
+        dataDetail += '<p align=center style="margin-top:0em; margin-bottom:0em">' +  series.series[minDistanceSerie].data[minDistanceElem].x.toString() + '</p>';
+        dataDetail += '<p align=center style="margin-top:0em; margin-bottom:0em">' + series.series[minDistanceSerie].data[minDistanceElem].y.toString() + '</p>';
+        dataDetail += '</div>';
         document.getElementById('dataDetail').innerHTML = dataDetail;
+       // center the text lines inside the containing box, just for now
+        document.getElementById('dataDetailInner').style.paddingTop = ($('#dataDetail').height()-$('#dataDetailInner').height())/2 + 'px';
 
        layer.draw();
     });
@@ -206,7 +212,8 @@ function initChart()
 
 	// add the layer to the stage
 	stage.add(layer);
-     draw(layer, chartBox);
+    draw(layer, chartBox);
+    document.getElementById('dataDetail').innerHTML = '<p color=#fff; align=center>position over the chart for details here</p>';
 }
 
 	function initTimeframe()
