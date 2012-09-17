@@ -213,7 +213,7 @@ function initChart()
 	// add the layer to the stage
 	stage.add(layer);
     draw(layer, chartBox);
-    document.getElementById('dataDetail').innerHTML = '<p color=#fff; align=center>move over the chart for details here</p>';
+    document.getElementById('dataDetail').innerHTML = '<p color=#fff; align=center>position over the chart for details here</p>';
 }
 
 	function initTimeframe()
