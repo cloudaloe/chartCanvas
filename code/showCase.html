@@ -1,7 +1,8 @@
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<script type='text/javascript' src='http://d3js.org/d3.v2.js'></script>    	
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script src="https://apis.google.com/js/client.js?onload=OdddnLoadCallback"></script>
+        <script type='text/javascript' src='http://d3js.org/d3.v2.js'></script>
 		<link type="text/css" href="jquery/css/custom-theme/jquery-ui-1.8.23.custom.css" rel="stylesheet" />
 		<script type="text/javascript" src="jquery/js/jquery-1.8.0.min.js"></script>
 		<script type="text/javascript" src="jquery/js/jquery-ui-1.8.23.custom.min.js"></script>
@@ -32,10 +33,20 @@
 	<script>
 		function focusOnInput(){
 			document.getElementById('questionInput').focus();}
-		
-		function onLoad() { 
+
+        function BigQueryGet(){
+            gapi.client.load('bigquery', 'v2', function() {
+                console.log('BigQuery API probably loaded');
+                gapi.client.setApiKey('AIzaSyAkNvx53EEN3L_SCTDgDASoh1PJ_J1Z_cs');
+                var request = gapi.client.bigquery.tables.get({'id': 'play.uploadTest1'});
+                request.execute(function(response) {console.log(response, JSON.stringify(response, null))});
+            });
+
+        }
+
+		function onLoad() {
 			//animateChartContainer();
-			csvLoad("mock-data/table11.csv");
+            csvLoad("mock-data/table11.csv");
 		}
 
 		window.onload = onLoad;
