@@ -3,7 +3,7 @@
 //
 
 //var hostname = 'localhost';
-var port = process.env.PORT || 1338;
+var port = process.env.PORT || 1338;  // for Heroku runtime compatibility
 var staticPath = './code';
 
 var server = require('http').createServer(requestHandler);
@@ -22,4 +22,35 @@ function requestHandler(request, response) {
 		
 server.listen(port, null, null, function(){ 
 	console.log('Server listening on' + ': '  + port);});
-		
+
+function mysqlDB()
+{
+
+    var mysql      = require('mysql');
+    var statement = 'SELECT * from table1';
+
+    //var statement = 'insert into table1 SET ?';
+    var values  = {id: 3, name: 444};
+
+    var connection = mysql.createConnection({
+        host     : 'instance22681.db.xeround.com',
+        port    : '14944',
+        user     : 'cloudaloe',
+        password : 'cloudaloe',
+        database: 'hack'
+    });
+
+    connection.connect();
+
+    connection.query(statement, values, function(err, rows, fields) {
+        if (err) throw err;
+        for (i=0; i<rows.length; i++)
+        {
+            console.log(rows[i]);
+        }
+    });
+
+    connection.end();
+}
+
+mysqlDB();

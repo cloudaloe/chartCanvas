@@ -1,4 +1,9 @@
+## my ignores ##
+/node_modules
 /.idea
+
+## following ignores are a    ##
+## Github default boilerplate ##
 
 #################
 ## Eclipse
