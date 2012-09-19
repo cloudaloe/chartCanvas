@@ -6,6 +6,7 @@
 var port = process.env.PORT || 1338;  // for Heroku runtime compatibility
 var staticPath = './code';
 
+var queryString = require('querystring');
 var server = require('http').createServer(requestHandler);
 var static = require('node-static'); 
 staticContentServer = new static.Server(staticPath, { cache: false });
@@ -18,7 +19,24 @@ function requestHandler(request, response) {
                 response.writeHead(err.status, err.headers);
                 response.end(); }
 			else
-                console.log("Served " + staticPath + request.url)});}
+                console.log("Served " + staticPath + request.url)});
+
+    if (request.method == 'POST')
+    {
+        // handle uploading new data
+        console.log('Post request received.');
+        var data = '';
+        //request.setEncoding("utf8");
+        request.on('data', function(chunk) {
+            data += chunk.toString();
+        });
+
+        request.on('end', function() {
+            var dataAsObject = queryString.parse(data);
+            console.log(JSON.stringify(dataAsObject))
+        });
+    }
+}
 		
 server.listen(port, null, null, function(){ 
 	console.log('Server listening on' + ': '  + port);});
@@ -26,10 +44,11 @@ server.listen(port, null, null, function(){
 function mysqlDB()
 {
 
-    var mysql      = require('mysql');
-    var statement = 'SELECT * from table1';
+    var mysql = require('mysql');
+    //var statement = 'SELECT * from table1';
+    var statement = 'insert into table1 SET ?';
+    //var statement = 'create table data (timestamp TIMESTAMP, value float)'
 
-    //var statement = 'insert into table1 SET ?';
     var values  = {id: 3, name: 444};
 
     var connection = mysql.createConnection({
