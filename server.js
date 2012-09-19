@@ -12,7 +12,11 @@ var static = require('node-static');
 staticContentServer = new static.Server(staticPath, { cache: false });
 
 function requestHandler(request, response) {
-	if (request.method == 'GET') 
+	if (request.method == 'GET')
+        //
+        // a UI client page load
+        //  delegated to node-static for serving it
+        //
 		staticContentServer.serve(request, response, function (err, res) {
             if (err) { 
                 console.error("Error serving " + staticPath + request.url + " - " + err.message);
@@ -23,7 +27,11 @@ function requestHandler(request, response) {
 
     if (request.method == 'POST')
     {
+        //
         // handle uploading new data
+        // not delegated to node-static,
+        // so we handle parsing and  responsing ourselves
+        //
         console.log('Post request received.');
         var data = '';
         //request.setEncoding("utf8");
@@ -34,6 +42,8 @@ function requestHandler(request, response) {
         request.on('end', function() {
             var dataAsObject = queryString.parse(data);
             console.log(JSON.stringify(dataAsObject))
+            response.writeHead(200);
+            response.end();
         });
     }
 }
