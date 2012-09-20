@@ -32,18 +32,34 @@ function requestHandler(request, response) {
         // not delegated to node-static,
         // so we handle parsing and  responsing ourselves
         //
-        console.log('Post request received.');
-        var data = '';
+        console.log('Handling post request from client' + request.connection.remoteAddress +
+            ':' + request.connection.remotePort);
+        //console.log('Request headers are:' + JSON.stringify(request.headers));
+
         //request.setEncoding("utf8");
+        var data = '';
+
         request.on('data', function(chunk) {
             data += chunk.toString();
         });
 
         request.on('end', function() {
-            var dataAsObject = queryString.parse(data);
-            console.log(JSON.stringify(dataAsObject))
-            response.writeHead(200);
-            response.end();
+            var postObject = queryString.parse(data);
+            console.log('data', data);
+            console.log('json', JSON.stringify(postObject))
+            switch(postObject.version)
+            {
+                case undefined:
+                    response.writeHead(400, 'Error:an  API version is not specified in the client request');
+                    response.end();
+                    break;
+                 case '0.1':
+                    response.writeHead(200, null);
+                    response.end();
+                default:
+                    response.writeHead(400, 'Error: the API version specified by the client request is not supported');
+                    response.end();
+            }
         });
     }
 }
