@@ -5,6 +5,7 @@
 //var hostname = 'localhost';
 var port = process.env.PORT || 1338;  // for Heroku runtime compatibility
 var staticPath = './code';
+var mysql = require('mysql');
 var mysqlConnection = null;
 
 var geoip = require('geoip-lite');
@@ -79,59 +80,117 @@ function requestHandler(request, response) {
 server.listen(port, null, null, function(){ 
 	console.log('Server listening on' + ': '  + port);});
 
-function initDB()
+function mysqlPush(statement)
 {
     mysqlVerifyConnection();
-    var statement = 'create table data (timestamp TIMESTAMP, value float)'
+    mysqlConnection.query(statement, function(err, result) {
+        if (err)
+        {
+            console.log('Error encountered executing DDL: \n', err);
+            return err;
+        }
+    });
+}
+
+function mysqlGet(statement)
+{
+    mysqlVerifyConnection();
+
+    mysqlConnection.query(statement, function(err, result) {
+        if (err)
+        {
+            console.log('Error encountered executing mysql query: \n', err);
+            return err;
+        }
+        else
+        {
+            for (i=0; i<result.length; i++)
+            {
+                console.log(result[i]);
+            }
+            return result;
+        }
+    });
+}
+
+
+function mysqlInitDB()
+{
+    mysqlVerifyConnection();
+
+    //
+    // valuesTableID will be used as a table name, hence its length set according to
+    // http://stackoverflow.com/questions/6868302/maximum-length-of-a-table-name-in-mysql
+    //
+    var statement = 'create table master (apiKey BIGINT UNSIGNED UNIQUE, identifier VARCHAR(20), unit VARCHAR(100), valuesTableID VARCHAR(64))';
+     mysqlPush(statement);
+}
+
+function mysqlNewEntityInit(name)
+{
+    //
+    //  first, get a unique ID to use for the new table
+    // this ID determines the name of the table in which
+    // the datums of the entity will be stored
+
+    var valuesTableID = mysqlGet('select max(valuesTableID)  as max from master').max;
+
+
+
+    // create entries in the master table
+
+    name += parseString()
+    // create a table for the metric values
+    mysqlPush('create table ' + name + ' (timestamp TIMESTAMP, value float)');
 }
 
 function mysqlVerifyConnection()
 {
     if (!mysqlConnection)
     {
-            mysqlConnection = mysql.createConnection({
+         mysqlConnection = mysql.createConnection({
+            debug   : false,
             host     : 'instance22681.db.xeround.com',
             port    : '14944',
             user     : 'cloudaloe',
             password : 'cloudaloe',
             database: 'hack'
+         });
+        mysqlConnection.connect(function(err){
+            if (err)
+            {
+                console.log('Failed connecting to mysql \n', err);
+            }
+            else
+                console.log('Connected to mysql');
         });
-        mysqlConnection.connect();
     }
 }
 
-function testMysqlDB()
+function stupidTestMysqlDB()
 {
-    var mysql = require('mysql');
-    var statement = 'SELECT * from table1';
-    //var statement = 'insert into table1 SET ?';
+    //var statement = 'SELECT * from table1';
+    var statement = 'insert into table1 SET ?';
     //var statement = 'create table data (timestamp TIMESTAMP, value float)'
 
     var values  = {id: 5, name: 555};
 
-    var connection = mysql.createConnection({
-        host     : 'instance22681.db.xeround.com',
-        port    : '14944',
-        user     : 'cloudaloe',
-        password : 'cloudaloe',
-        database: 'hack'
-    });
+    mysqlVerifyConnection();
 
-     connection.connect(function(err){
-          if (err) throw err;
-          else  console.log('connected to mysql');
-     });
-
-    connection.query(statement, values, function(err, rows, fields) {
-        console.log(statement, values, rows.length, err);
+    mysqlConnection.query(statement, values, function(err, result, fields) {
+        //console.log(statement, values, rows.length, err);
         if (err) throw err;
-        for (i=0; i<rows.length; i++)
+        for (i=0; i<result.length; i++)
         {
-            console.log(rows[i]);
+            console.log(result[i]);
         }
     });
-    connection.end();
+    mysqlConnection.end();
 }
 
-testMysqlDB();
+//mysqlInitDB();
+//mysqlNewEntityInit('metric69498');
+//stupidTestMysqlDB();
+var valuesTableID = mysqlGet('select max(valuesTableID)  as max from master');
+debugger;
 
