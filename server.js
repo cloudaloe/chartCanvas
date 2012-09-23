@@ -5,13 +5,25 @@
 //var hostname = 'localhost';
 var port = process.env.PORT || 1338;  // for Heroku runtime compatibility
 var staticPath = './code';
+var mysqlConnection = null;
 
+var geoip = require('geoip-lite');
 var queryString = require('querystring');
 var server = require('http').createServer(requestHandler);
 var static = require('node-static'); 
 staticContentServer = new static.Server(staticPath, { cache: false });
 
 function requestHandler(request, response) {
+
+    //
+    // IP to Geolocation translation package
+    // Note that for proper utilization, it should only check
+    // the IP upon a new TCP connection, not every http request
+    //
+    // var geo = geoip.lookup(request.connection.remoteAddress);
+    // console.log(request.connection.remoteAddress, geo);
+    //
+
 	if (request.method == 'GET')
         //
         // a UI client page load
@@ -30,10 +42,10 @@ function requestHandler(request, response) {
         //
         // handle uploading new data
         // not delegated to node-static,
-        // so we handle parsing and  responsing ourselves
+        // so we handle parsing and  responding ourselves
         //
-        console.log('Handling post request from client' + request.connection.remoteAddress +
-            ':' + request.connection.remotePort);
+        console.log('Handling post request from client ' + request.connection.remoteAddress +
+            ' (port ' + request.connection.remotePort +')');
         //console.log('Request headers are:' + JSON.stringify(request.headers));
 
         //request.setEncoding("utf8");
@@ -67,15 +79,35 @@ function requestHandler(request, response) {
 server.listen(port, null, null, function(){ 
 	console.log('Server listening on' + ': '  + port);});
 
-function mysqlDB()
+function initDB()
 {
+    mysqlVerifyConnection();
+    var statement = 'create table data (timestamp TIMESTAMP, value float)'
+}
 
+function mysqlVerifyConnection()
+{
+    if (!mysqlConnection)
+    {
+            mysqlConnection = mysql.createConnection({
+            host     : 'instance22681.db.xeround.com',
+            port    : '14944',
+            user     : 'cloudaloe',
+            password : 'cloudaloe',
+            database: 'hack'
+        });
+        mysqlConnection.connect();
+    }
+}
+
+function testMysqlDB()
+{
     var mysql = require('mysql');
-    //var statement = 'SELECT * from table1';
-    var statement = 'insert into table1 SET ?';
+    var statement = 'SELECT * from table1';
+    //var statement = 'insert into table1 SET ?';
     //var statement = 'create table data (timestamp TIMESTAMP, value float)'
 
-    var values  = {id: 3, name: 444};
+    var values  = {id: 5, name: 555};
 
     var connection = mysql.createConnection({
         host     : 'instance22681.db.xeround.com',
@@ -85,17 +117,21 @@ function mysqlDB()
         database: 'hack'
     });
 
-    connection.connect();
+     connection.connect(function(err){
+          if (err) throw err;
+          else  console.log('connected to mysql');
+     });
 
     connection.query(statement, values, function(err, rows, fields) {
+        console.log(statement, values, rows.length, err);
         if (err) throw err;
         for (i=0; i<rows.length; i++)
         {
             console.log(rows[i]);
         }
     });
-
     connection.end();
 }
 
-mysqlDB();
+testMysqlDB();
+
