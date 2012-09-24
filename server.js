@@ -164,17 +164,23 @@ function mysqlInitDB()
     // It doesn't convert them into numbers but strings, and also https://github.com/Sannis/node-mysql-libmysqlclient/issues/110
     // may indicate BIGINT is not supported
     //
-    var statement = 'create table master (apiKey INT UNSIGNED, ' +
-                                                                                            'identifier VARCHAR(20), ' +
-                                                                                            'unit VARCHAR(100), ' +
-                                                                                            'valuesTableNumPart INT UNSIGNED, ' +
-                                                                                            'valuesTableName VARCHAR(64))';
+    var statement = 'create table masterLevel1 (apiKey INT UNSIGNED, ' +
+                                                                                                             'identifier VARCHAR(20), ' +
+                                                                                                             'metricID INT UNSIGNED)';
+
+
+    mysqlPush(statement);
+
+    var statement ='create table masterLevel2 (metricID INT UNSIGNED, ' +
+                                                                                                            'unit VARCHAR(100), ' +
+                                                                                                            'valuesTableName VARCHAR(64))';
+
     mysqlPush(statement);
 }
 
 function mysqlFindEntity(apiKey, identifiersArray)
 {
-    mysqlGetSingleResult('select valuesTableNumPart from master where apiKey = ?', apiKey, function(result){
+    mysqlGetSingleResult('select metricID from master where apiKey = ?', apiKey, function(result){
         if (!result)
             console.log('Entity ' + apiKey + ' not defined in mysql database');
         else
@@ -185,31 +191,35 @@ function mysqlFindEntity(apiKey, identifiersArray)
 function mysqlNewEntityInit(name)
 {
     debugger;
-    mysqlGetSingleResult('select max(valuesTableNumPart) from master', null, function(entityValuesTableNumPart) {
+    mysqlGetSingleResult('select max(metricID) from masterLevel1', null, function(metricID) {
         //
         //  first, get a unique ID to use for the new table
         // this ID determines the name of the table in which
         // the datums of the entity will be stored
         //
-        console.log(entityValuesTableNumPart);
-        if (!entityValuesTableNumPart) // master table still empty
-            entityValuesTableNumPart= 1;
+        console.log(metricID);
+        if (!metricID) // master table still empty
+            metricID= 1;
          else
-            entityValuesTableNumPart += 1;
+            metricID += 1;
 
-        entityValuesTableName = 'ev' + entityValuesTableNumPart.toString();
-        console.log(entityValuesTableNumPart, ' ', entityValuesTableName);
+        metricValuesTableName = 'mv' + metricID.toString();
+        console.log(metricID, ' ', metricValuesTableName);
 
         // create a table for the metric values
-        mysqlPush('create table ' + entityValuesTableName + ' (timestamp TIMESTAMP, value float)');
+        mysqlPush('create table ' + metricValuesTableName + ' (timestamp TIMESTAMP, value float)');
 
-        // create entries in the master table
-        mysqlPush('insert into master SET ?', {
+        // create entries in the master tables
+        mysqlPush('insert into masterLevel1 SET ?', {
             apiKey: '9833',
             identifier: 'server3',
-            unit:'percent',
-            valuesTableNumPart:entityValuesTableNumPart,
-            valuesTableName: entityValuesTableName
+            metricID:metricID
+        });
+
+        mysqlPush('insert into masterLevel2 SET ?', {
+            metricID:metricID,
+            Unit:'percent',
+            valuesTableName: metricValuesTableName
         });
     });
 }
@@ -262,7 +272,7 @@ function stupidTestMysqlDB()
 mysqlInitDB();
 //mysqlNewEntityInit(null);
 //stupidTestMysqlDB();
-//mysqlGetSingleResult('select max(valuesTableNumPart) from master', function(result) {console.log(result);});
+//mysqlGetSingleResult('select max(metricID) from master', function(result) {console.log(result);});
 //if (!mysqlFindEntity(234234349, null))
    mysqlNewEntityInit(234234349);
 
