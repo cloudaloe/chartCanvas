@@ -3,6 +3,7 @@
 //
 
 //var hostname = 'localhost';
+console.log('Server starting');
 var port = process.env.PORT || 1338;  // for Heroku runtime compatibility
 var staticPath = './code';
 var mysql = require('mysql');
@@ -24,6 +25,44 @@ function requestHandler(request, response) {
     // var geo = geoip.lookup(request.connection.remoteAddress);
     // console.log(request.connection.remoteAddress, geo);
     //
+
+    function apiError(textMessage)
+    {
+        textMessage = 'API Error: ' + textMessage;
+        console.log(textMessage);
+        response.writeHead(400, textMessage);
+        response.end();
+    }
+
+    function confirmParamInApiRequest(postObject, paramName)
+    {
+        if (!postObject[paramName])
+        {
+            apiError('The API parameter ' + paramName + ' is required in this API request, but not included in it.')
+            return false;
+        }
+        else
+            return true;
+    }
+
+    function handleLevel1(postObject)
+    {
+        switch (postObject.command)
+        {
+            case 'data':
+                if (confirmParamInApiRequest(postObject, 'apiKey'))
+                {
+                    response.writeHead(200, null);
+                    response.end();
+                }
+                break;
+            case undefined:
+               apiError('no command specified in the request.');
+                break;
+            default:
+                apiError('command ' + postObject.command + ' is not supported.');
+        }
+    }
 
 	if (request.method == 'GET')
         //
@@ -58,20 +97,18 @@ function requestHandler(request, response) {
 
         request.on('end', function() {
             var postObject = queryString.parse(data);
-            console.log('data', data);
-            console.log('json', JSON.stringify(postObject))
+            //console.log('data', data);
+            console.log(postObject);
             switch(postObject.version)
             {
                 case undefined:
-                    response.writeHead(400, 'Error:an  API version is not specified in the client request');
-                    response.end();
+                    apiError('an  API version is not specified in the client request');
                     break;
                  case '0.1':
-                    response.writeHead(200, null);
-                    response.end();
+                    handleLevel1(postObject);
+                    break;
                 default:
-                    response.writeHead(400, 'Error: the API version specified by the client request is not supported');
-                    response.end();
+                    apiError('the API version specified by the client request is not supported');
             }
         });
     }
@@ -160,12 +197,12 @@ function mysqlInitDB()
     // valuesTableName will be used as a table name, hence its length set according to
     // http://stackoverflow.com/questions/6868302/maximum-length-of-a-table-name-in-mysql.
     //
-    // note that the mysql INT data type is being used, because node-mysql doesn't properly handle BIGINT at present, Sep 2012
-    // It doesn't convert them into numbers but strings, and also https://github.com/Sannis/node-mysql-libmysqlclient/issues/110
-    // may indicate BIGINT is not supported
+    // note that the mysql INT data type is being used, because node-mysql doesn't properly handle BIGINT at present,
+    // may indicate BIGINT is not supported, Sep 2012.
     //
     var statement = 'create table masterLevel1 (apiKey INT UNSIGNED, ' +
-                                                                                                             'identifier VARCHAR(20), ' +
+                                                                                                             'identifierKey VARCHAR(64),' +
+                                                                                                             'identifierVal VARCHAR(64),' +
                                                                                                              'metricID INT UNSIGNED)';
 
 
@@ -178,13 +215,22 @@ function mysqlInitDB()
     mysqlPush(statement);
 }
 
-function mysqlFindEntity(apiKey, identifiersArray)
+function mysqlFindEntity(apiKey, identifiers)
 {
-    mysqlGetSingleResult('select metricID from master where apiKey = ?', apiKey, function(result){
-        if (!result)
-            console.log('Entity ' + apiKey + ' not defined in mysql database');
-        else
-            console.log('Entity ' + apiKey + ' found in mysql database, and has entity values table ' + result + ' associated to it');
+    var statement = '';
+    for (i=0; i<identifiers.length; i++)
+    {
+        statement +=  'identifierKey = ' + identifierVal;
+    }
+    mysqlGet('select * from masterLevel1 where apiKey = ?', apiKey, function(result){
+        if (result.length>0)
+        for (i=0; i<identifiers.length; i++)
+        {
+            if (!result)
+                console.log('Entity ' + apiKey + ' not defined in mysql database');
+            else
+                console.log('Entity ' + apiKey + ' found in mysql database, and has entity values table ' + result + ' associated to it');
+        }
     });
 }
 
@@ -211,8 +257,9 @@ function mysqlNewEntityInit(name)
 
         // create entries in the master tables
         mysqlPush('insert into masterLevel1 SET ?', {
-            apiKey: '9833',
-            identifier: 'server3',
+            apiKey: '738229833',
+            identifierKey: 'server name',
+            identifierVal: 'server3',
             metricID:metricID
         });
 
@@ -268,11 +315,11 @@ function stupidTestMysqlDB()
     mysqlConnection.end();
 }
 
-
-mysqlInitDB();
+//mysqlInitDB();
 //mysqlNewEntityInit(null);
 //stupidTestMysqlDB();
 //mysqlGetSingleResult('select max(metricID) from master', function(result) {console.log(result);});
-//if (!mysqlFindEntity(234234349, null))
-   mysqlNewEntityInit(234234349);
+//if (mysqlFindEntity(738229833, null))
+//    console.log(found);
+//mysqlNewEntityInit(234234349, 'datacenter03', 'server109');
 
