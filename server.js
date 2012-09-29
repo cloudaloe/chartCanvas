@@ -1,4 +1,9 @@
 //
+// todo: handle server disconnects as per https://github.com/felixge/node-mysql#server-disconnects,
+//  https://github.com/felixge/node-mysql#error-handling,
+//  and try-catching
+
+//
 // setup a listener and attach a content server to it
 //
 
@@ -8,6 +13,16 @@ var port = process.env.PORT || 1338;  // for Heroku runtime compatibility
 var staticPath = './code';
 var mysql = require('mysql');
 var mysqlConnection = null;
+var events = require('events').EventEmitter;
+
+
+//var step = require('step');
+
+//var mysqlQ = require('mysql-queues');
+//var transaction = mysqlConnection.createQueue();
+//transaction.query...
+
+//var creatingNewEntity = false;
 
 var geoip = require('geoip-lite');
 var queryString = require('querystring');
@@ -52,6 +67,8 @@ function requestHandler(request, response) {
             case 'data':
                 if (confirmParamInApiRequest(postObject, 'apiKey'))
                 {
+                    // here need to extract all identifiers and start the real handling -
+                    // entering the data into the database
                     response.writeHead(200, null);
                     response.end();
                 }
@@ -117,7 +134,7 @@ function requestHandler(request, response) {
 server.listen(port, null, null, function(){ 
 	console.log('Server listening on' + ': '  + port);});
 
-function mysqlPush(statement, queryVars)
+function mysqlPush(statement, queryVars, doneCallBack)
 {
     mysqlVerifyConnection();
     mysqlConnection.query(statement, queryVars, function(err, result) {
@@ -126,9 +143,17 @@ function mysqlPush(statement, queryVars)
             console.log('Error encountered executing in mysql: \n', statement, err);
             return err;
         }
+        else
+        {
+            if (doneCallBack)
+            {
+                doneCallBack(result);
+            }
+            console.log('executed in mysql: ', statement); //returned result:  \n', result );
+            return err;
+        }
     });
 }
-
 
 //
 // Utility function for running a query that should return a single result value
@@ -197,78 +222,142 @@ function mysqlInitDB()
     // valuesTableName will be used as a table name, hence its length set according to
     // http://stackoverflow.com/questions/6868302/maximum-length-of-a-table-name-in-mysql.
     //
-    // note that the mysql INT data type is being used, because node-mysql doesn't properly handle BIGINT at present,
-    // may indicate BIGINT is not supported, Sep 2012.
+    // note that the mysql INT data type is being used, because node-mysql seems not to properly handle BIGINT at present,
+    // may indicate BIGINT is not supported, as per Sep 2012.
     //
-    var statement = 'create table masterLevel1 (apiKey INT UNSIGNED, ' +
+    var statement = 'create table masterLevel1 (accountKey INT UNSIGNED, ' +
                                                                                                              'identifierKey VARCHAR(64),' +
                                                                                                              'identifierVal VARCHAR(64),' +
                                                                                                              'metricID INT UNSIGNED)';
 
 
-    mysqlPush(statement);
+    mysqlPush(statement, null);
 
     var statement ='create table masterLevel2 (metricID INT UNSIGNED, ' +
-                                                                                                            'unit VARCHAR(100), ' +
-                                                                                                            'valuesTableName VARCHAR(64))';
+                                                                                                            'datumName VARCHAR(100), ' +
+                                                                                                            'datumUnit VARCHAR(100), ' +
+                                                                                                            'datumTableName VARCHAR(64))';
 
-    mysqlPush(statement);
+    mysqlPush(statement, null);
 }
 
-function mysqlFindEntity(apiKey, identifiers)
+function mysqlFindEntity(accountKey, identifiers, valName)
 {
+    // this has good chances of doing the job.
+    /*
+    select masterLevel1.MetricID, count(*) from masterLevel1, masterLevel2
+    where
+        (identifierKey = 'farm' and identifierVal = 1 and masterLevel1.metricID = masterLevel2.metricID)
+        or
+        (identifierKey = 'server' and identifierVal = 3 and masterLevel1.metricID = masterLevel2.metricID)
+        or ...
+    group by masterLevel1.MetricID
+    */
+    // then need to compare the count result (of each result metric) to the number of identifiers seeked:
+    // larger - there's a multitude of entities who share the requested identifiers, stored in the db
+    //                     this means there's more identifiers that need to be specified for getting to a specific entity
+    // smaller - no single entity as requested, is stored in the database
+   //  equal - we found the single metric ID for the requested single entity. This case we can return the metric ID.
+
+
     var statement = '';
+
+
+    statement += 'where accountKey = ?';
+    for (i=0; i<identifiers.length; i++)
+    {
+        statement += 'select metricID from masterLevel1'
+    }
+
     for (i=0; i<identifiers.length; i++)
     {
         statement +=  'identifierKey = ' + identifierVal;
     }
-    mysqlGet('select * from masterLevel1 where apiKey = ?', apiKey, function(result){
-        if (result.length>0)
-        for (i=0; i<identifiers.length; i++)
-        {
-            if (!result)
-                console.log('Entity ' + apiKey + ' not defined in mysql database');
-            else
-                console.log('Entity ' + apiKey + ' found in mysql database, and has entity values table ' + result + ' associated to it');
-        }
-    });
+
+
 }
 
-function mysqlNewEntityInit(name)
+/*mysqlGet('select * from masterLevel1 where apiKey = ?', apiKey, function(result){
+ if (result.length>0)
+ for (i=0; i<identifiers.length; i++)
+ {
+ if (!result)
+ console.log('Entity ' + apiKey + ' not defined in mysql database');
+ else
+ console.log('Entity ' + apiKey + ' found in mysql database, and has entity values table ' + result + ' associated to it');
+ }*/
+
+//var events = require('events').EventEmitter;
+//var mysqlNewEntityInitEvents = new events;
+function functionRunSynchronizer(accountKey, identifiers, datumName)
 {
-    debugger;
-    mysqlGetSingleResult('select max(metricID) from masterLevel1', null, function(metricID) {
-        //
-        //  first, get a unique ID to use for the new table
-        // this ID determines the name of the table in which
-        // the datums of the entity will be stored
-        //
-        console.log(metricID);
-        if (!metricID) // master table still empty
-            metricID= 1;
-         else
-            metricID += 1;
+    if (creatingNewEntity)
+    {
+        mysqlNewEntityInitEvents.once('mysqlNewEntityInit.done', mysqlNewEntityInit(accountKey, identifiers, datumName));
+        mysqlNewEntityInit(accountKey, identifiers, datumName)
+    }
+     else
+    {
+        mysqlNewEntityInit(accountKey, identifiers, datumName)
+    }
+}
 
-        metricValuesTableName = 'mv' + metricID.toString();
-        console.log(metricID, ' ', metricValuesTableName);
+function mysqlNewEntityInit(accountKey, identifiers, datumName)
+{
+    var queryCompletionTracker = new events;
+    var count = 0;
+    queryCompletionTracker.on('done', function(where) {
+        count += 1;
+        console.log('done event hit for ' + where );
+        console.log('count is now' + count);
+        if (count == 4)
+            mysqlPush('COMMIT');
+    }) ;
 
-        // create a table for the metric values
-        mysqlPush('create table ' + metricValuesTableName + ' (timestamp TIMESTAMP, value float)');
+    mysqlPush('START TRANSACTION', function(){
+        mysqlGetSingleResult('select max(metricID) from masterLevel1', null, function(metricID) {
+            //
+            //  first, get a unique ID to use for the new table
+            // this ID determines the name of the table in which
+            // the datums of the entity will be stored
+            //
+            console.log(metricID);
+            if (!metricID) // master table still empty
+                metricID = 1;
+             else
+                metricID += 1;
 
-        // create entries in the master tables
-        mysqlPush('insert into masterLevel1 SET ?', {
-            apiKey: '738229833',
-            identifierKey: 'server name',
-            identifierVal: 'server3',
-            metricID:metricID
-        });
+            metricValuesTableName = 'dv' + metricID.toString();
+            console.log(metricID, ' ', metricValuesTableName);
 
-        mysqlPush('insert into masterLevel2 SET ?', {
-            metricID:metricID,
-            Unit:'percent',
-            valuesTableName: metricValuesTableName
+            // create a table for the metric values
+            mysqlPush('create table ' + metricValuesTableName + ' (timestamp TIMESTAMP, value float)', function() {queryCompletionTracker .emit('done', 'create')});
+
+            // create entries in the master tables
+            for (i=0; i<identifiers.length; i++)
+            {
+                console.log('before level 1 insert');
+                mysqlPush('insert into masterLevel1 SET ?', {
+                    accountKey: 'accountKey',
+                    identifierKey: identifiers[i].key,
+                    identifierVal: identifiers[i].val,
+                    metricID:metricID
+                },
+                function() {queryCompletionTracker.emit('done', 'insert level 1')});
+            }
+
+            mysqlPush('insert into masterLevel2 SET ?', {
+                metricID:metricID,
+                datumName: datumName,
+                datumUnit:'percent',
+                datumTableName: metricValuesTableName
+            },
+            function() {queryCompletionTracker.emit('done', 'insert level 2')});
         });
     });
+
+    //mysqlNewEntityInitEvents.emit('mysqlNewEntityInit.done');
+    //creatingNewEntity = false;
 }
 
 function mysqlVerifyConnection()
@@ -283,7 +372,7 @@ function mysqlVerifyConnection()
             password : 'cloudaloe',
             database: 'hack'
          });
-        mysqlConnection.connect(function(err){
+         mysqlConnection.connect(function(err){
             if (err)
             {
                 console.log('Failed connecting to mysql \n', err);
@@ -291,6 +380,7 @@ function mysqlVerifyConnection()
             else
                 console.log('Connected to mysql');
         });
+        //mysqlQ(mysqlConnection, false);
     }
 }
 
@@ -316,10 +406,26 @@ function stupidTestMysqlDB()
 }
 
 //mysqlInitDB();
-//mysqlNewEntityInit(null);
 //stupidTestMysqlDB();
 //mysqlGetSingleResult('select max(metricID) from master', function(result) {console.log(result);});
 //if (mysqlFindEntity(738229833, null))
 //    console.log(found);
-//mysqlNewEntityInit(234234349, 'datacenter03', 'server109');
 
+mysqlNewEntityInit('555555',
+    [{key: 'datacenter', val:'DCAA'},
+        {key: 'server', val:'server1'}],
+    'load');
+mysqlNewEntityInit('555555',
+    [{key: 'datacenter', val:'DCAA'},
+        {key: 'server', val:'server2'}],
+    'load');
+/*mysqlNewEntityInit('555555',
+    [{key: 'datacenter', val:'datacBB'},
+        {key: 'server', val:'server1'}],
+    'load');
+mysqlNewEntityInit('555555',
+    [{key: 'datacenter', val:'datacBB'},
+        {key: 'server', val:'server2'}],
+    'load');
+*/
+// TODO: handle table name counter overflow
