@@ -15,7 +15,6 @@ var mysql = require('mysql');
 var mysqlConnection = null;
 var events = require('events').EventEmitter;
 
-
 //var step = require('step');
 
 //var mysqlQ = require('mysql-queues');
@@ -149,7 +148,7 @@ function mysqlPush(statement, queryVars, doneCallBack)
             {
                 doneCallBack(result);
             }
-            console.log('executed in mysql: ', statement); //returned result:  \n', result );
+            console.log('executed in mysql: ', statement, ' ', queryVars); //returned result:  \n', result );
             return err;
         }
     });
@@ -302,16 +301,56 @@ function functionRunSynchronizer(accountKey, identifiers, datumName)
     }
 }
 
-function mysqlNewEntityInit(accountKey, identifiers, datumName)
+/*
+//  frozen attempt to make a modular 'syncrhonize calls to a given function'
+var serializer = new Object;
+function serialize(funcName)
 {
+    if (!serializer[funcName])
+    {
+        serializer[funcName]=new Object();
+        serializer[funcName].stack = new Array();
+    }
+}
+var mysqlNewEntityInitSynchronizer = new serializer(mysqlNewEntityInit);
+*/
+
+
+stack = new Array(); // this is a global
+function mysqlNewEntityInitSynchronizer()
+{
+    arguments = Array.prototype.slice.call(arguments);
+    stack.push(arguments); // queue the arguments as an array
+    if (stack.length == 1)
+    {
+        arguments.push(callDone);
+        mysqlNewEntityInit.apply(mysqlNewEntityInit, arguments); // invoke the target function
+    }
+
+    function callDone()
+    {
+        stack.shift();
+        if (stack.length > 0)
+        {
+            // invoke the target function with the queued arguments plus the callback
+            var arguments = stack.shift();
+            arguments.push(callDone)
+            mysqlNewEntityInit.apply(mysqlNewEntityInit, arguments);
+        }
+    }
+}
+
+function mysqlNewEntityInit(accountKey, identifiers, datumName, doneCallBack)
+{
+    console.log(arguments.callee.name + ' starting');
     var queryCompletionTracker = new events;
     var count = 0;
     queryCompletionTracker.on('done', function(where) {
         count += 1;
-        console.log('done event hit for ' + where );
-        console.log('count is now' + count);
+        //console.log('done event hit for ' + where );
+        //console.log('count is now' + count);
         if (count == 4)
-            mysqlPush('COMMIT');
+            mysqlPush('COMMIT', doneCallBack);
     }) ;
 
     mysqlPush('START TRANSACTION', function(){
@@ -336,7 +375,7 @@ function mysqlNewEntityInit(accountKey, identifiers, datumName)
             // create entries in the master tables
             for (i=0; i<identifiers.length; i++)
             {
-                console.log('before level 1 insert');
+                //console.log('before level 1 insert');
                 mysqlPush('insert into masterLevel1 SET ?', {
                     accountKey: 'accountKey',
                     identifierKey: identifiers[i].key,
@@ -405,17 +444,17 @@ function stupidTestMysqlDB()
     mysqlConnection.end();
 }
 
-//mysqlInitDB();
+mysqlInitDB();
 //stupidTestMysqlDB();
 //mysqlGetSingleResult('select max(metricID) from master', function(result) {console.log(result);});
 //if (mysqlFindEntity(738229833, null))
 //    console.log(found);
 
-mysqlNewEntityInit('555555',
+mysqlNewEntityInitSynchronizer('555555',
     [{key: 'datacenter', val:'DCAA'},
         {key: 'server', val:'server1'}],
     'load');
-mysqlNewEntityInit('555555',
+mysqlNewEntityInitSynchronizer('555555',
     [{key: 'datacenter', val:'DCAA'},
         {key: 'server', val:'server2'}],
     'load');
