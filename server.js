@@ -13,14 +13,13 @@ var port = process.env.PORT || 1338;  // for Heroku runtime compatibility
 var staticPath = './code';
 var mysql = require('mysql');
 var mysqlConnection = null;
-var events = require('events').EventEmitter;
+//var events = require('events').EventEmitter;
 
 //var step = require('step');
 
 //var mysqlQ = require('mysql-queues');
 //var transaction = mysqlConnection.createQueue();
 //transaction.query...
-
 //var creatingNewEntity = false;
 
 var geoip = require('geoip-lite');
@@ -136,6 +135,7 @@ server.listen(port, null, null, function(){
 function mysqlPush(statement, queryVars, doneCallBack)
 {
     mysqlVerifyConnection();
+    var time = process.hrtime();
     mysqlConnection.query(statement, queryVars, function(err, result) {
         if (err)
         {
@@ -144,6 +144,9 @@ function mysqlPush(statement, queryVars, doneCallBack)
         }
         else
         {
+            invocationDuration = process.hrtime(time);
+            console.log('MySQL access took %d seconds and %d millieseoncds', invocationDuration[0], invocationDuration[1]/1000000);
+
             if (doneCallBack)
             {
                 doneCallBack(result);
@@ -343,18 +346,24 @@ function mysqlNewEntityInitSynchronizer()
 function mysqlNewEntityInit(accountKey, identifiers, datumName, doneCallBack)
 {
     console.log(arguments.callee.name + ' starting');
-    var queryCompletionTracker = new events;
+    //var queryCompletionTracker = new events;
+    //function queryCompletionTracker.on('done', function(where) {
     var count = 0;
-    queryCompletionTracker.on('done', function(where) {
+    function queryCompletionTracker(where)
+    {
+        console.log(count);
         count += 1;
         //console.log('done event hit for ' + where );
         //console.log('count is now' + count);
-        if (count == 4)
+        if (count == 2 + identifiers.length)
+        {
             mysqlPush('COMMIT', doneCallBack);
-    }) ;
+            console.log('committed');
+        }
+    }
 
     mysqlPush('START TRANSACTION', function(){
-        mysqlGetSingleResult('select max(metricID) from masterLevel1', null, function(metricID) {
+        mysqlGetSingleResult('select max(metricID) from masterLevel2', null, function(metricID) {
             //
             //  first, get a unique ID to use for the new table
             // this ID determines the name of the table in which
@@ -370,7 +379,7 @@ function mysqlNewEntityInit(accountKey, identifiers, datumName, doneCallBack)
             console.log(metricID, ' ', metricValuesTableName);
 
             // create a table for the metric values
-            mysqlPush('create table ' + metricValuesTableName + ' (timestamp TIMESTAMP, value float)', function() {queryCompletionTracker .emit('done', 'create')});
+            mysqlPush('create table ' + metricValuesTableName + ' (timestamp TIMESTAMP, value float)', queryCompletionTracker ('create'));
 
             // create entries in the master tables
             for (i=0; i<identifiers.length; i++)
@@ -382,21 +391,19 @@ function mysqlNewEntityInit(accountKey, identifiers, datumName, doneCallBack)
                     identifierVal: identifiers[i].val,
                     metricID:metricID
                 },
-                function() {queryCompletionTracker.emit('done', 'insert level 1')});
+                queryCompletionTracker('insert level 1'));
             }
 
             mysqlPush('insert into masterLevel2 SET ?', {
                 metricID:metricID,
                 datumName: datumName,
+                datumName: datumName,
                 datumUnit:'percent',
                 datumTableName: metricValuesTableName
             },
-            function() {queryCompletionTracker.emit('done', 'insert level 2')});
+            queryCompletionTracker('insert level 2'));
         });
     });
-
-    //mysqlNewEntityInitEvents.emit('mysqlNewEntityInit.done');
-    //creatingNewEntity = false;
 }
 
 function mysqlVerifyConnection()
@@ -444,7 +451,7 @@ function stupidTestMysqlDB()
     mysqlConnection.end();
 }
 
-mysqlInitDB();
+//mysqlInitDB();
 //stupidTestMysqlDB();
 //mysqlGetSingleResult('select max(metricID) from master', function(result) {console.log(result);});
 //if (mysqlFindEntity(738229833, null))
@@ -454,10 +461,10 @@ mysqlNewEntityInitSynchronizer('555555',
     [{key: 'datacenter', val:'DCAA'},
         {key: 'server', val:'server1'}],
     'load');
-mysqlNewEntityInitSynchronizer('555555',
-    [{key: 'datacenter', val:'DCAA'},
-        {key: 'server', val:'server2'}],
-    'load');
+//mysqlNewEntityInitSynchronizer('555555',
+//    [{key: 'datacenter', val:'DCAA'},
+//        {key: 'server', val:'server2'}],
+//    'load');
 /*mysqlNewEntityInit('555555',
     [{key: 'datacenter', val:'datacBB'},
         {key: 'server', val:'server1'}],
