@@ -1,3 +1,5 @@
+This project also includes some API server code.
+
 ###Where is the code?
 The browser-side code is inside directory <code> code</code>.
 
